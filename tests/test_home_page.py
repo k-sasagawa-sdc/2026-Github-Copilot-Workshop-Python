@@ -57,3 +57,22 @@ class HomePageTest(unittest.TestCase):
         self.assertIn('id="start-button"', body)
         self.assertIn('id="pause-button"', body)
         self.assertIn('id="reset-button"', body)
+
+    def test_root_contains_skip_button_and_settings_form(self):
+        response = self.client.get("/")
+        body = response.get_data(as_text=True)
+
+        self.assertIn('id="skip-button"', body)
+        self.assertIn('id="settings-form"', body)
+        self.assertIn('id="focus-minutes"', body)
+        self.assertIn('id="short-break-minutes"', body)
+        self.assertIn('id="long-break-minutes"', body)
+        self.assertIn('id="long-break-interval"', body)
+
+    def test_root_contains_stats_placeholders(self):
+        response = self.client.get("/")
+        body = response.get_data(as_text=True)
+
+        self.assertIn('id="today-completed-count"', body)
+        self.assertIn('id="today-focus-minutes"', body)
+        self.assertIn('id="weekly-summary"', body)
