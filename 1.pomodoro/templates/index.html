@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ page_title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    <script src="{{ url_for('static', filename='js/timer.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero-panel">
+        <p class="eyebrow">Pomodoro</p>
+        <h1>{{ page_title }}</h1>
+        <p class="lead">Flask で段階的に実装していくポモドーロタイマーです。</p>
+        <a class="settings-link" href="#settings-panel">設定を確認する</a>
+      </section>
+
+      <section class="timer-panel" aria-labelledby="timer-heading">
+        <div class="timer-card">
+          <p id="mode-display" class="mode-label">Focus Session</p>
+          <h2 id="timer-heading" class="section-title">Timer</h2>
+          <p
+            id="timer-display"
+            class="timer-display"
+            aria-live="polite"
+            data-focus-seconds="1500"
+          >
+            25:00
+          </p>
+          <div class="controls" aria-label="タイマー操作">
+            <button id="start-button" type="button">開始</button>
+            <button id="pause-button" type="button">一時停止</button>
+            <button id="reset-button" type="button">リセット</button>
+          </div>
+        </div>
+
+        <aside id="settings-panel" class="side-panel" aria-labelledby="settings-heading">
+          <h2 id="settings-heading" class="section-title">Settings</h2>
+          <p>作業時間、休憩時間、長休憩の周期を今後ここで調整します。</p>
+        </aside>
+
+        <aside class="side-panel" aria-labelledby="stats-heading">
+          <h2 id="stats-heading" class="section-title">Stats</h2>
+          <ul class="stats-list">
+            <li>今日の完了セッション: 0</li>
+            <li>集中時間: 0 分</li>
+            <li>次の長休憩まで: 4 セッション</li>
+          </ul>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>
