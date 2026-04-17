@@ -24,9 +24,11 @@
     durationSeconds,
     now = () => Date.now(),
     onTick = () => {},
+    onComplete = () => {},
     scheduleRepeating = (callback, delayMs) => globalScope.setInterval(callback, delayMs),
     cancelRepeating = (intervalId) => globalScope.clearInterval(intervalId),
   }) {
+    let totalDurationSeconds = durationSeconds;
     let status = TIMER_STATUS.idle;
     let startedAtMs = null;
     let remainingSeconds = durationSeconds;
@@ -49,13 +51,17 @@
       intervalId = null;
     }
 
+    function setStartedAtFromRemainingSeconds(nextRemainingSeconds) {
+      startedAtMs = now() - (totalDurationSeconds - nextRemainingSeconds) * 1000;
+    }
+
     function updateRemainingSeconds() {
       if (startedAtMs === null) {
         return;
       }
 
       remainingSeconds = calculateRemainingSeconds({
-        durationSeconds,
+        durationSeconds: totalDurationSeconds,
         startedAtMs,
         nowMs: now(),
       });
@@ -73,6 +79,7 @@
       if (remainingSeconds === 0) {
         stopInterval();
         setStatus(TIMER_STATUS.idle);
+        onComplete();
       }
     }
 
@@ -83,7 +90,7 @@
         }
 
         setStatus(TIMER_STATUS.running);
-        startedAtMs = now();
+        setStartedAtFromRemainingSeconds(totalDurationSeconds);
         startInterval();
       },
       pause() {
@@ -94,6 +101,40 @@
         updateRemainingSeconds();
         stopInterval();
         setStatus(TIMER_STATUS.paused);
+      },
+      resume() {
+        if (status !== TIMER_STATUS.paused) {
+          return;
+        }
+
+        setStartedAtFromRemainingSeconds(remainingSeconds);
+        setStatus(TIMER_STATUS.running);
+        startInterval();
+      },
+      reset() {
+        stopInterval();
+        startedAtMs = null;
+        remainingSeconds = totalDurationSeconds;
+        setStatus(TIMER_STATUS.idle);
+        onTick(remainingSeconds);
+      },
+      setDuration(nextDurationSeconds) {
+        totalDurationSeconds = nextDurationSeconds;
+        startedAtMs = null;
+        remainingSeconds = nextDurationSeconds;
+        stopInterval();
+        setStatus(TIMER_STATUS.idle);
+        onTick(remainingSeconds);
+      },
+      getDurationSeconds() {
+        return totalDurationSeconds;
+      },
+      sync() {
+        if (!isRunning()) {
+          return;
+        }
+
+        emitTick();
       },
       getRemainingSeconds() {
         return remainingSeconds;

@@ -189,12 +189,16 @@ Flask アプリとして起動でき、今後の TDD を回せる最小構成を
 
 ## Phase 2: フォーカスタイマー MVP
 
+### 対応 Issue
+
+- #2 [plan] Phase 2: フォーカスタイマー MVP の残作業を完了する
+
 ### 進捗
 
-- ステータス: 進行中
+- ステータス: 完了
 - 実施日: 2026-04-17
-- 直近の作業: timer.js と app.js の責務を整理するリファクタリングを行った
-- 次の着手先: 再開処理の Red
+- 直近の作業: 再開、リセット、ブラウザ復帰時の時間補正を追加した
+- 次の着手先: Phase 3 の Red
 
 ### 目的
 
@@ -251,6 +255,9 @@ Flask アプリとして起動でき、今後の TDD を回せる最小構成を
 - [tests/test_timer.js](tests/test_timer.js) に一時停止で残り時間を保持するテストを追加した
 - [1.pomodoro/static/js/timer.js](1.pomodoro/static/js/timer.js) で状態定数、interval 操作、残り時間更新処理を整理し、状態変更の重複を減らした
 - [1.pomodoro/static/js/app.js](1.pomodoro/static/js/app.js) で DOM 取得、描画、イベント接続を分離し、初期化処理を簡潔にした
+- [1.pomodoro/static/js/timer.js](1.pomodoro/static/js/timer.js) に resume、reset、sync を追加した
+- [1.pomodoro/static/js/app.js](1.pomodoro/static/js/app.js) で開始ボタンから再開を呼び分け、リセットボタンとブラウザ復帰時の同期を接続した
+- [tests/test_timer.js](tests/test_timer.js) に再開、リセット、経過時刻ベースの再計算テストを追加した
 
 ### 確認済み事項
 
@@ -261,6 +268,9 @@ Flask アプリとして起動でき、今後の TDD を回せる最小構成を
 - 実行中に開始ボタンを再度押しても二重開始しない
 - 一時停止すると残り時間を保持したまま進行が止まる
 - idle 状態で一時停止しても状態が壊れない
+- 一時停止後に再開すると残り時間の減少が再開する
+- リセットすると初期値へ戻り idle に戻る
+- タブ復帰時に経過時刻ベースで即時に残り時間が補正される
 - リファクタリング後も既存の JavaScript テストと Python テストが通る
 - テストコマンド `node --test tests/test_timer.js` が通る
 - テストコマンド `/workspaces/2026-Github-Copilot-Workshop-Python/.venv/bin/python -m unittest discover -s tests -p 'test_*.py'` が通る
@@ -272,6 +282,17 @@ Flask アプリとして起動でき、今後の TDD を回せる最小構成を
 - resume と reset を追加しても app.js の初期化が肥大化しない形になっているか
 
 ## Phase 3: 状態管理の独立
+
+### 進捗
+
+- ステータス: 完了
+- 実施日: 2026-04-17
+- 直近の作業: タイマー状態を state-machine.js へ分離した
+- 次の着手先: Phase 4 の Red
+
+### 対応 Issue
+
+- #3 [plan] Phase 3: 状態管理を独立した有限状態機械にする
 
 ### 目的
 
@@ -309,7 +330,31 @@ Flask アプリとして起動でき、今後の TDD を回せる最小構成を
 - 状態遷移ロジックがテストで保護されている
 - UI からロジックが分離されている
 
+### 実施結果
+
+- [1.pomodoro/static/js/state-machine.js](1.pomodoro/static/js/state-machine.js) に idle、focus_running、short_break_running、long_break_running、paused を持つ有限状態機械を追加した
+- [tests/test_state_machine.js](tests/test_state_machine.js) に start、pause、resume、reset、complete、skip の遷移テストを追加した
+- [1.pomodoro/static/js/app.js](1.pomodoro/static/js/app.js) で UI から状態を直接書き換えず、状態機械を経由してタイマーと画面を同期する形へ変更した
+
+### 確認済み事項
+
+- idle で start すると focus_running になる
+- focus_running で pause すると paused になる
+- paused で resume すると focus_running に戻る
+- 不正遷移を無視しても状態が壊れない
+
 ## Phase 4: ポモドーロルール対応
+
+### 進捗
+
+- ステータス: 完了
+- 実施日: 2026-04-17
+- 直近の作業: 短休憩、長休憩、自動切り替え、スキップを追加した
+- 次の着手先: Phase 5 の Red
+
+### 対応 Issue
+
+- #4 [plan] Phase 4: ポモドーロルールを追加する
 
 ### 目的
 
@@ -348,7 +393,31 @@ Flask アプリとして起動でき、今後の TDD を回せる最小構成を
 - ポモドーロの基本サイクルが自動で進行する
 - モード遷移の主要ケースがテストで保証される
 
+### 実施結果
+
+- [1.pomodoro/static/js/state-machine.js](1.pomodoro/static/js/state-machine.js) に focus 完了回数カウントと長休憩判定を追加した
+- [1.pomodoro/static/js/app.js](1.pomodoro/static/js/app.js) でセッション完了時に次モードを自動開始する処理と skip ボタン処理を追加した
+- [1.pomodoro/templates/index.html](1.pomodoro/templates/index.html) に skip ボタンとセッション進捗表示を追加した
+
+### 確認済み事項
+
+- 作業完了後は短休憩へ切り替わる
+- 規定回数後は長休憩へ切り替わる
+- 休憩完了後は作業へ戻る
+- スキップで次の妥当なモードへ進む
+
 ## Phase 5: 通知と視覚フィードバック
+
+### 進捗
+
+- ステータス: 完了
+- 実施日: 2026-04-17
+- 直近の作業: 進捗リング、完了音、ブラウザ通知、モード別テーマを追加した
+- 次の着手先: Phase 6 の Red
+
+### 対応 Issue
+
+- #5 [plan] Phase 5: 通知と視覚フィードバックを追加する
 
 ### 目的
 
@@ -382,7 +451,30 @@ Flask アプリとして起動でき、今後の TDD を回せる最小構成を
 - セッション終了に気づける
 - 現在モードが視覚的に判別できる
 
+### 実施結果
+
+- [1.pomodoro/static/js/app.js](1.pomodoro/static/js/app.js) に Web Audio API を使った完了音と Notification API を使ったブラウザ通知を追加した
+- [1.pomodoro/static/js/ui.js](1.pomodoro/static/js/ui.js) にモード表示、進捗率表示、ボタン状態更新処理を追加した
+- [1.pomodoro/static/css/style.css](1.pomodoro/static/css/style.css) にモード別配色と進捗リングのスタイルを追加した
+
+### 確認済み事項
+
+- セッション完了時に音と通知が発火する
+- モード切り替えに合わせて配色が切り替わる
+- 進捗率がリングと数値で表示される
+
 ## Phase 6: 設定機能とローカル保存
+
+### 進捗
+
+- ステータス: 完了
+- 実施日: 2026-04-17
+- 直近の作業: 設定フォームと localStorage 保存を追加した
+- 次の着手先: Phase 7 の Red
+
+### 対応 Issue
+
+- #6 [plan] Phase 6: 設定機能とローカル保存を追加する
 
 ### 目的
 
@@ -418,7 +510,30 @@ Flask アプリとして起動でき、今後の TDD を回せる最小構成を
 - ユーザー設定が再読み込み後も維持される
 - 不正値でアプリ状態が壊れない
 
+### 実施結果
+
+- [1.pomodoro/templates/index.html](1.pomodoro/templates/index.html) に作業時間、短休憩、長休憩、長休憩周期の設定フォームを追加した
+- [1.pomodoro/static/js/storage.js](1.pomodoro/static/js/storage.js) に設定のバリデーション、localStorage 保存、初期値読込を追加した
+- [1.pomodoro/static/js/app.js](1.pomodoro/static/js/app.js) で idle 時のタイマーへ設定値を反映し、次セッション以降に新設定が使われるようにした
+
+### 確認済み事項
+
+- 妥当な設定値は保存される
+- 不正値はエラー表示される
+- localStorage と API の双方から設定を復元できる
+
 ## Phase 7: Flask API 連携
+
+### 進捗
+
+- ステータス: 完了
+- 実施日: 2026-04-17
+- 直近の作業: 設定 API、セッション API、統計 API を追加した
+- 次の着手先: Phase 8 の Red
+
+### 対応 Issue
+
+- #7 [plan] Phase 7: Flask API を追加する
 
 ### 目的
 
@@ -452,7 +567,31 @@ Flask アプリとして起動でき、今後の TDD を回せる最小構成を
 - フロントエンドから API 経由で設定とセッションを扱える
 - API テストが通る
 
+### 実施結果
+
+- [1.pomodoro/app.py](1.pomodoro/app.py) に GET /api/settings、PUT /api/settings、POST /api/sessions、GET /api/stats を追加した
+- [1.pomodoro/models/settings.py](1.pomodoro/models/settings.py) と [1.pomodoro/models/session.py](1.pomodoro/models/session.py) に入力モデルとバリデーションを追加した
+- [tests/test_api.py](tests/test_api.py) に設定取得、設定更新、バリデーション、セッション保存、統計取得のテストを追加した
+
+### 確認済み事項
+
+- 設定取得 API が想定 JSON を返す
+- 妥当な設定更新が保存される
+- 不正な設定更新は 400 になる
+- セッション保存後に統計 API から集計結果を取得できる
+
 ## Phase 8: SQLite 永続化
+
+### 進捗
+
+- ステータス: 完了
+- 実施日: 2026-04-17
+- 直近の作業: SQLite の初期化と repository 層を追加した
+- 次の着手先: Phase 9 の Red
+
+### 対応 Issue
+
+- #8 [plan] Phase 8: SQLite で永続化する
 
 ### 目的
 
@@ -485,7 +624,30 @@ Flask アプリとして起動でき、今後の TDD を回せる最小構成を
 - アプリ再起動後も設定と履歴が保持される
 - 永続化まわりのテストが通る
 
+### 実施結果
+
+- [1.pomodoro/repositories/database.py](1.pomodoro/repositories/database.py) に SQLite 初期化処理を追加した
+- [1.pomodoro/repositories/settings_repository.py](1.pomodoro/repositories/settings_repository.py) と [1.pomodoro/repositories/session_repository.py](1.pomodoro/repositories/session_repository.py) に CRUD を追加した
+- [1.pomodoro/app.py](1.pomodoro/app.py) の create_app で DATABASE_PATH を設定可能にし、テスト時に一時 DB を使えるようにした
+
+### 確認済み事項
+
+- 設定が SQLite に保存されて再取得できる
+- セッション記録が SQLite に保存される
+- 永続化データをもとに統計を再構築できる
+
 ## Phase 9: 統計表示
+
+### 進捗
+
+- ステータス: 完了
+- 実施日: 2026-04-17
+- 直近の作業: 日次、週次の統計表示を UI と API に追加した
+- 次の着手先: Phase 10 の Red
+
+### 対応 Issue
+
+- #9 [plan] Phase 9: 統計表示を追加する
 
 ### 目的
 
@@ -519,7 +681,30 @@ Flask アプリとして起動でき、今後の TDD を回せる最小構成を
 - 保存データに基づく統計が正しく表示される
 - 集計ロジックのテストが通る
 
+### 実施結果
+
+- [1.pomodoro/services/stats_service.py](1.pomodoro/services/stats_service.py) に日次、週次集計処理を追加した
+- [1.pomodoro/templates/index.html](1.pomodoro/templates/index.html) に今日の完了回数、集中時間、週間サマリーの表示領域を追加した
+- [1.pomodoro/static/js/ui.js](1.pomodoro/static/js/ui.js) と [1.pomodoro/static/js/app.js](1.pomodoro/static/js/app.js) で統計の描画と更新処理を追加した
+
+### 確認済み事項
+
+- 今日の完了回数が表示される
+- 今日の集中時間が表示される
+- 週次の活動サマリーが表示される
+
 ## Phase 10: 仕上げ
+
+### 進捗
+
+- ステータス: 完了
+- 実施日: 2026-04-17
+- 直近の作業: レスポンシブ、アクセシビリティ、エラー表示、UI 調整を仕上げた
+- 次の着手先: すべてのフェーズが完了
+
+### 対応 Issue
+
+- #10 [plan] Phase 10: 仕上げと品質向上
 
 ### 目的
 
@@ -551,6 +736,18 @@ Flask アプリとして起動でき、今後の TDD を回せる最小構成を
 
 - 主要な利用シーンで操作に迷わない
 - モバイルとデスクトップの両方で実用に耐える
+
+### 実施結果
+
+- [1.pomodoro/static/css/style.css](1.pomodoro/static/css/style.css) を全面更新し、モバイルとデスクトップで崩れにくいレイアウトへ調整した
+- [1.pomodoro/templates/index.html](1.pomodoro/templates/index.html) に aria-live 領域、ラベル付きフォーム、状態表示を追加した
+- [tests/test_home_page.py](tests/test_home_page.py) に設定フォーム、スキップボタン、統計プレースホルダの存在テストを追加した
+
+### 確認済み事項
+
+- キーボードフォーカスが見える
+- エラー時に設定フォームへメッセージが出る
+- モバイルとデスクトップの両方で主要要素が 1 画面に収まる
 
 ## フェーズ横断のテスト戦略
 
@@ -590,9 +787,9 @@ Flask アプリとして起動でき、今後の TDD を回せる最小構成を
 2. [完了] 最小の画面を返す実装を入れる
 3. [完了] タイマー表示要素の存在テストを書く
 4. [完了] UI シェルを作る
-5. [次] 残り時間計算関数のテストを書く
-6. フォーカスタイマーの開始処理を作る
-7. pause と resume のテストを追加する
-8. 状態遷移モジュールへリファクタリングする
+5. [完了] 残り時間計算関数のテストを書く
+6. [完了] フォーカスタイマーの開始処理を作る
+7. [完了] pause と resume のテストを追加する
+8. [完了] 状態遷移モジュールへリファクタリングする
 
 この順番なら、最初期から常に動くアプリを維持しつつ、最も重要なタイマーコアへ早く到達できる。

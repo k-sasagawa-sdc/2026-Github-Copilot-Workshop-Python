@@ -5,49 +5,93 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ page_title }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    <script id="initial-settings" type="application/json">{{ initial_settings|tojson }}</script>
+    <script id="initial-stats" type="application/json">{{ initial_stats|tojson }}</script>
+    <script src="{{ url_for('static', filename='js/state-machine.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/timer.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/ui.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/storage.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
   </head>
-  <body>
+  <body data-mode="focus">
     <main class="app-shell">
       <section class="hero-panel">
         <p class="eyebrow">Pomodoro</p>
         <h1>{{ page_title }}</h1>
-        <p class="lead">Flask で段階的に実装していくポモドーロタイマーです。</p>
+        <p class="lead">集中、休憩、統計、設定を 1 画面で扱えるポモドーロタイマーです。</p>
+        <p class="session-caption">今日の積み上げを、視覚的に追いかけます。</p>
         <a class="settings-link" href="#settings-panel">設定を確認する</a>
       </section>
 
       <section class="timer-panel" aria-labelledby="timer-heading">
         <div class="timer-card">
-          <p id="mode-display" class="mode-label">Focus Session</p>
-          <h2 id="timer-heading" class="section-title">Timer</h2>
-          <p
-            id="timer-display"
-            class="timer-display"
-            aria-live="polite"
-            data-focus-seconds="1500"
-          >
-            25:00
-          </p>
+          <div class="timer-header">
+            <div>
+              <p id="mode-display" class="mode-label">Focus Session</p>
+              <h2 id="timer-heading" class="section-title">Timer</h2>
+              <p id="mode-description" class="mode-description">集中する時間です。1 つの作業だけに絞ります。</p>
+            </div>
+            <p id="session-state" class="session-state">Ready</p>
+          </div>
+          <div id="progress-ring" class="progress-ring" aria-hidden="true">
+            <div class="progress-ring__inner">
+              <p id="timer-display" class="timer-display" aria-live="polite">25:00</p>
+              <p id="progress-value" class="progress-value">0%</p>
+            </div>
+          </div>
+          <dl class="session-metadata">
+            <div>
+              <dt>完了した集中</dt>
+              <dd id="cycle-display">0</dd>
+            </div>
+            <div>
+              <dt>次の長休憩まで</dt>
+              <dd><span id="long-break-countdown">4</span> セッション</dd>
+            </div>
+          </dl>
           <div class="controls" aria-label="タイマー操作">
             <button id="start-button" type="button">開始</button>
             <button id="pause-button" type="button">一時停止</button>
+            <button id="skip-button" type="button">スキップ</button>
             <button id="reset-button" type="button">リセット</button>
           </div>
+          <p id="live-region" class="visually-hidden" aria-live="polite"></p>
         </div>
 
         <aside id="settings-panel" class="side-panel" aria-labelledby="settings-heading">
           <h2 id="settings-heading" class="section-title">Settings</h2>
-          <p>作業時間、休憩時間、長休憩の周期を今後ここで調整します。</p>
+          <form id="settings-form" class="settings-form">
+            <label>
+              <span>作業時間</span>
+              <input id="focus-minutes" name="focus_minutes" type="number" min="1" max="120" required />
+            </label>
+            <label>
+              <span>短休憩</span>
+              <input id="short-break-minutes" name="short_break_minutes" type="number" min="1" max="60" required />
+            </label>
+            <label>
+              <span>長休憩</span>
+              <input id="long-break-minutes" name="long_break_minutes" type="number" min="1" max="90" required />
+            </label>
+            <label>
+              <span>長休憩までの回数</span>
+              <input id="long-break-interval" name="long_break_interval" type="number" min="1" max="12" required />
+            </label>
+            <button type="submit" class="secondary-button">設定を保存</button>
+            <p id="settings-status" class="status-text" aria-live="polite"></p>
+          </form>
         </aside>
 
         <aside class="side-panel" aria-labelledby="stats-heading">
           <h2 id="stats-heading" class="section-title">Stats</h2>
           <ul class="stats-list">
-            <li>今日の完了セッション: 0</li>
-            <li>集中時間: 0 分</li>
-            <li>次の長休憩まで: 4 セッション</li>
+            <li>今日の完了セッション: <strong id="today-completed-count">0</strong></li>
+            <li>今日の集中時間: <strong id="today-focus-minutes">0</strong> 分</li>
+            <li>今週の完了セッション: <strong id="week-completed-count">0</strong></li>
+            <li>今週の集中時間: <strong id="week-focus-minutes">0</strong> 分</li>
           </ul>
+          <h3 class="subsection-title">週間サマリー</h3>
+          <ul id="weekly-summary" class="weekly-summary"></ul>
         </aside>
       </section>
     </main>
